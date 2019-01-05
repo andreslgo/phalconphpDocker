@@ -60,20 +60,26 @@ RUN apt-get install -y \
 RUN a2dismod mpm_event && a2enmod mpm_prefork && a2enmod rewrite
 
 #Install Phalcon PHP
-ENV PHALCON_URL https://packagecloud.io/install/repositories/phalcon/stable/config_file.list?os=ubuntu&dist=bionic&source=script
-ENV PHALCON_KEY_URL https://packagecloud.io/phalcon/stable/gpgkey
-RUN curl -sSf $PHALCON_URL > /etc/apt/sources.list.d/phalcon_stable.list \
-  && curl -L $PHALCON_KEY_URL | apt-key add -
+ARG PHALCON_VERSION=3.4.1
+ARG PHALCON_EXT_PATH=php7/64bits
 
-RUN apt-get update && apt-get install php7.2-phalcon --no-install-recommends \
-  && rm -rf /var/lib/apt/lists/*
+RUN set -xe && \
+        # Compile Phalcon
+        curl -LO https://github.com/phalcon/cphalcon/archive/v${PHALCON_VERSION}.tar.gz && \
+        tar xzf ${PWD}/v${PHALCON_VERSION}.tar.gz && \
+        docker-php-ext-install -j $(getconf _NPROCESSORS_ONLN) ${PWD}/cphalcon-${PHALCON_VERSION}/build/${PHALCON_EXT_PATH} && \
+        # Remove all temp files
+        rm -r \
+            ${PWD}/v${PHALCON_VERSION}.tar.gz \
+${PWD}/cphalcon-${PHALCON_VERSION}
 
 #Copy Entrypoint
-COPY docker-php-entrypoint /usr/local/bin/
 
-ENTRYPOINT ["docker-php-entrypoint"]
+#ADD ["docker-php-entrypoint", "/usr/local/bin/"]
 
-COPY apache2-foreground /usr/local/bin/
+ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+
+#ADD ["apache2-foreground", "/usr/local/bin/"]
 WORKDIR /var/www/html
 
 EXPOSE 80
