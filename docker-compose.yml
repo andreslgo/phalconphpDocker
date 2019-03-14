@@ -1,0 +1,23 @@
+version: '3'
+services:
+  phalcon:
+    image: andreslgo/phalconphp
+    container_name: phalcon
+    ports:
+      - "127.0.0.1:80:80"
+    volumes:
+      - ./projects:/var/www/html
+      - ./apache-config:/etc/apache2/sites-available
+      - ./php-config/php.ini:/etc/php/7.2/apache2/php.ini
+    depends_on:
+      - db
+  db:
+    image: mysql:5.7
+    container_name: db
+    ports:
+      - "127.0.0.1:3306:3307"
+    expose:
+      - "3306"
+    volumes:
+      - ./data:/var/lib/mysql
+      - ./mysql-config/mysqld.cnf:/etc/mysql/mysql.conf.d/mysql.cnf
